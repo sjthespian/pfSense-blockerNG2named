@@ -27,7 +27,7 @@ $ cd /root/ && curl https://raw.githubusercontent.com/gewuerzgurke84/pfSense-blo
 $ chmod +x createBlockingZonefile.sh
 ```
 ## Adjust parameters for your environment
-- [x] Decide if the script should restart or reload named automatically `$restartNamed (Y/N)` and `$reloadNamed (Y/N)`. For reload you will also need to specify your view and zone names.
+- [x] Decide if the script should restart or reload named automatically `$restartNamed (Y/N)` and `$reloadNamed (Y/N)`. For reload you will also need to specify your view and zone names - ex. `reloadZones="Internal/blackhole"`.
 ## Add global options to allow response-policy zones
 Navigate to Services > BIND DNS Server > Settings
 Click on "Show Advanced Settings" on the bottom of the page
