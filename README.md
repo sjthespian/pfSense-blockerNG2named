@@ -4,6 +4,9 @@ Small script to convert pfBlockerNG DNS Blacklists to named configuration
 pfSense users which like the pfBlockerNG addon and the bind9 as a recursive DNS server can benefit from pfBlockerNG DNS blocking functionalities even with installed bind9.
 This script can be installed on a pfSense machine and converts given DNS blocklist in a bind compatible way. 
 It was tested with: pfSense 2.4.3/2.4.4/2.4.4_1, pfBlockerNG 2.1.2_3/pfBlockerNG-Devel 2.2.5_19 and bind9.12
+
+Where possible the configuration is pulled directly from the pfBlockerNG values in config.xml. It will use the whitelist from pfBlockerNG and also supports the top1M list if it is enabled.
+
 # Prerequisite
 
    * You need to have pfBlockerNG / pfBlockerNG-Devel installed and configured. Consider following guides: https://www.tecmint.com/install-configure-pfblockerng-dns-black-listing-in-pfsense/
@@ -24,9 +27,7 @@ $ cd /root/ && curl https://raw.githubusercontent.com/gewuerzgurke84/pfSense-blo
 $ chmod +x createBlockingZonefile.sh
 ```
 ## Adjust parameters for your environment
-- [x] Please adjust the $destVIP parameter to the configured DNSBL Virtual IP (can be found unter Firewall > pfBlockerNG > DNSBL).
-- [x] Decide if the script should restart named automatically $restartNamed (Y/N)
-- [x] Add whitelist entries for domains if necessary (see $whitelistFile)
+- [x] Decide if the script should restart or reload named automatically `$restartNamed (Y/N)` and `$reloadNamed (Y/N)`. For reload you will also need to specify your view and zone names.
 ## Add global options to allow response-policy zones
 Navigate to Services > BIND DNS Server > Settings
 Click on "Show Advanced Settings" on the bottom of the page
@@ -75,9 +76,11 @@ Now it's time to let the script run the first time:
 ## Processing /var/db/pfblockerng/dnsbl/Spam404.txt
 ## Processing /var/db/pfblockerng/dnsbl/Yoyo.txt
 ## Processing /var/db/pfblockerng/dnsbl/hpHosts_ATS.txt
-# Apply whitelist (/root/createBlockingRPZoneWhitelist.txt)
+# Apply whitelist (/var/db/pfblockerng/pfbdnsblsuppression.txt)
+# Removing top 1000 entries of top1M list
 # Build RP Zone File
-# Restarting named
+# Reloading named: Internal/blackhole zone reload queued
+
 # Finished
 ```
 Optionally:

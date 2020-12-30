@@ -14,9 +14,14 @@
 sourceFilePattern="/var/db/pfblockerng/dnsbl/*.txt"
 
 #
-# Whitelist File: Never point zones from this whitelist to blocklist
+# Top 1M file
 #
-whitelistFile="/root/createBlockingRPZoneWhitelist.txt"
+top1mFile="/var/db/pfblockerng/top-1m.csv"
+
+#
+# WhiteList file from DNSDBL
+#
+whitelistDNSBL="/var/db/pfblockerng/pfbdnsblsuppression.txt"
 
 #
 # Destination Directories: Destination bind/named zone file
@@ -26,21 +31,36 @@ destZoneFilenameInChroot="/cf/named/etc/namedb/fuck.ads.zone"
 #
 # Destination Virtual IP (please use the same Virtual IP as configured in pfBlockerNG)
 #
-destVIP=10.10.10.1
+#destVIP=10.10.10.1
+destVIP=`xmllint --xpath "//pfblockerngdnsblsettings/config/pfb_dnsvip/text()" /conf/config.xml`
 
 #
 # Restart named (Y/N)
 #
 restartNamed="N"
+reloadNamed="Y"
+# if reload is "Y", space-separated list of zones to reload. Ex. "Internal/blackhole"
+reloadZones="Internal/blackhole"
+
+#
+# Get settings for top1M list
+alexa_enabled=`xmllint --xpath "//pfblockerngdnsblsettings/config/alexa_enable/text()" /conf/config.xml`
+alexa_count=`xmllint --xpath "//pfblockerngdnsblsettings/config/alexa_count/text()" /conf/config.xml`
+
+# DNSBL whitelist
+if [ -f $whitelistDNSBL ]; then
+  dnsblwhregex=`sed 's/^"//;s/ .*$//;s/\./\\./g' /var/db/pfblockerng/pfbdnsblsuppression.txt | tr '\n' '|' | sed 's/|$//'`
+fi
 
 #
 # Write zone file
 #
 echo "# Creating zone file ($destZoneFilenameInChroot)"
+sn=$(date +%s)
 cat > $destZoneFilenameInChroot <<EOF
 \$TTL     60
 @ IN SOA        localhost. root.localhost. (
-    2015082801   ; serial number YYMMDDNN
+    $sn   ; serial number epoch time
          28800   ; refresh 8 hours
           7200   ; retry 2 hours
         864000   ; expire 10 days
@@ -68,23 +88,28 @@ do
 done
 
 #
-# Remove entries from whitelist (regexp)
+# Remove entries from whitelist
 #
-if [ -f "$whitelistFile" ]; then
-    echo "# Apply whitelist ($whitelistFile)"
-    while read line
-    do 
-        if [ ! -f "/tmp/.pfBlockerToBind.2" ]; then
-            cat /tmp/.pfBlockerToBind.1 |egrep -v $line > /tmp/.pfBlockerToBind.2
-        else
-            cat /tmp/.pfBlockerToBind.2 |egrep -v $line > /tmp/.pfBlockerToBind.n
-            mv /tmp/.pfBlockerToBind.n /tmp/.pfBlockerToBind.2
-        fi
-    done < $whitelistFile    
+if [ -n "$dnsblwhregex" ]; then
+    echo "# Apply whitelist ($whitelistDNSBL)"
+    egrep -v $dnsblwhregex /tmp/.pfBlockerToBind.1 > /tmp/.pfBlockerToBind.2
 else
-    echo "# Whitelist not found ($whitelistFile)"
+    echo "# Whitelist not found ($whitelistDNSBL)"
+    cp /tmp/.pfBlockerToBind.1 /tmp/.pfBlockerToBind.2
 fi
-    
+
+#
+# If enabled, remove entries from top1M
+#
+# NOTE: this file has crlf line terminations, not just newline
+if [ "$alexa_enabled" == "on" ]; then
+    echo "# Removing top $alexa_count entries of top1M list"
+    sed -n 1,${alexa_count}p $top1mFile | sed 's/^.*,//' | tr '\r' ' IN A' > /tmp/.pfBlockertop1m
+    cp /tmp/.pfBlockerToBind.2 /tmp/.pfBlockerToBind.1
+    grep -F -vf /tmp/.pfBlockertop1m /tmp/.pfBlockerToBind.1 > /tmp/.pfBlockerToBind.2
+    rm /tmp/.pfBlockertop1m
+fi
+
 #
 # Build resulting RP zone file
 #
@@ -103,6 +128,15 @@ rm /tmp/.pfBlockerToBind.2
 if [ "$restartNamed" == "Y" ]; then
     echo "# Restarting named"
     service named.sh restart
+fi
+if [ "$reloadNamed" == "Y" ]; then
+    echo -n "# Reloading named: "
+    for z in $reloadZones; do
+        echo -n "$z "
+        zcmd=`echo $z | awk -F/ '{printf "%s IN %s\n",$2,$1}'`
+        rndc reload $zcmd
+    done
+    echo
 fi
 
 echo "# Finished"
