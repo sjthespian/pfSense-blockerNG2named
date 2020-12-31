@@ -84,7 +84,7 @@ do
         echo "## Processing $blockFile"
         # Format of file is "local-data: "<zone> IN a <virtual dnsblip>""        
         # We'll make zones bind compatible by removing "_" and "@" and transforming them
-        cat $blockFile | cut -d\" -f2 | grep -v _ | grep -v "@" |grep $destVIP >> /tmp/.pfBlockerToBind.1        
+        grep $destVIP $blockFile | egrep -v '[@_]' | cut -d\" -f2 >> /tmp/.pfBlockerToBind.1        
 done
 
 #
