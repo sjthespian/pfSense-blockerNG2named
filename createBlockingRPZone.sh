@@ -79,7 +79,7 @@ fi
 echo > /tmp/.pfBlockerToBind.1
 
 #
-# Collect zones and ensure bind compatibility
+# Collect fqdns and ensure named compatibility
 #
 echo "# Collecting configured pfBlockerNG DNS Blacklist Files ($sourceFilePattern)"
 for blockFile in $sourceFilePattern
