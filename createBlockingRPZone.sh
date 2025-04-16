@@ -35,6 +35,11 @@ destZoneFilenameInChroot="/var/etc/named/etc/namedb/fuck.ads.zone"
 destVIP=`xmllint --xpath "//pfblockerngdnsblsettings/config/pfb_dnsvip/text()" /conf/config.xml`
 
 #
+# Unbound mode
+#
+unboundMode=`xmllint --xpath "//pfblockerngdnsblsettings/config/dnsbl_mode/text()" /conf/config.xml`
+
+#
 # Restart named (Y/N)
 #
 restartNamed="N"
@@ -87,12 +92,20 @@ do
         echo "## Processing $blockFile"
         # Format of file is "local-data: "<fqdn> IN a <virtual dnsblip>""        
 
+    if [ "$unboundMode" == "dnsbl_python" ]; then
+        # Format of file is (I think) ",<zone>,,1,<source>,<group>"
+        # We'll make zones bind compatible by removing "_" and "@" and
+        # transforming them into a bind entry with destVIP
+        awk -F, '(length($2) < 256) && ! ($2~( /[@_]/ || /\.-/ || /-\./)) {printf "%s\tIN\tA\t'$destVIP'\n",$2}' $blockFile >> /tmp/.pfBlockerToBind.1
+    else
         # We filter out names that make named complain by violating the grammar
         # and length restrictions of RFC1035. This awk script is an incremental
         # improvement on the original grep filtering, but it really needs to be
         # a proper regex match describing the RFC1035 grammar rather than a
         # filter that looks for specific bad patterns from the blacklist names.
         awk 'BEGIN { FS = ": " } length($2) < 256 && ! ( /[@_]/ || /\"-/ || /\.-/ || /-\./) { gsub("\"","",$2); print $2;}' $blockFile  >> /tmp/.pfBlockerToBind.1
+    fi
+ 
 done
 
 #

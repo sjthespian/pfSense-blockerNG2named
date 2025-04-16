@@ -5,6 +5,7 @@ Small script to convert pfBlockerNG DNS Blacklists to named configuration
 
 This was originally forked from [gewuerzgurke84/pfSense-blockerNG2named](https://github.com/gewuerzgurke84/pfSense-blockerNG2named), but it has several added features not available there:
   * It reads the whitelist and blacklist data directly from the pfBlocker configuration
+  * Adds support for unbound python mode
   * Supports using the top1M list, if enabled
   * Uses a semaphore to prevent multiple copies from running simultaniously
   * Attempts to remove "bad" hostnames from the generated zone file
