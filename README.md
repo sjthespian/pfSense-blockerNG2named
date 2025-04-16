@@ -1,11 +1,19 @@
 # pfSense-blockerNG2named
 Small script to convert pfBlockerNG DNS Blacklists to named configuration
+
+# Origin
+
+This was originally forked from [gewuerzgurke84/pfSense-blockerNG2named](https://github.com/gewuerzgurke84/pfSense-blockerNG2named), but it has several added features not available there:
+  * It reads the whitelist and blacklist data directly from the pfBlocker configuration
+  * Supports using the top1M list, if enabled
+  * Uses a semaphore to prevent multiple copies from running simultaniously
+  * Attempts to remove "bad" hostnames from the generated zone file
+  * It reloads only the affected blackhole zone via. rndc
+
 # Purpose
 pfSense users which like the pfBlockerNG addon and the bind9 as a recursive DNS server can benefit from pfBlockerNG DNS blocking functionalities even with installed bind9.
 This script can be installed on a pfSense machine and converts given DNS blocklist in a bind compatible way. 
-It was tested with: pfSense 2.4.3/2.4.4/2.4.4_1, pfBlockerNG 2.1.2_3/pfBlockerNG-Devel 2.2.5_19 and bind9.12
-
-Where possible the configuration is pulled directly from the pfBlockerNG values in config.xml. It will use the whitelist from pfBlockerNG and also supports the top1M list if it is enabled.
+It was tested with: pfSense 2.4.3/2.4.4/2.4.4_1/2.7.2, pfBlockerNG 2.1.2_3/pfBlockerNG-Devel 2.2.5_19/3.2.0_20 and bind 9.12/9.17
 
 # Prerequisite
 
