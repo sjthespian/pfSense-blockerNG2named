@@ -98,7 +98,7 @@ done
 #
 # Remove entries from whitelist
 #
-if [ -n "$dnsblwhregex" ]; then
+if [ -f /tmp/.pfBlockerWhitelist ]; then
     echo "# Apply whitelist ($whitelistDNSBL)"
     egrep -vf /tmp/.pfBlockerWhitelist /tmp/.pfBlockerToBind.1 > /tmp/.pfBlockerToBind.2
     rm /tmp/.pfBlockerWhitelist
